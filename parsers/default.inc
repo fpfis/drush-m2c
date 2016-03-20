@@ -37,6 +37,8 @@ function m2c_parsers_default_m2c($internal_make_info) {
     'require' => array(
       'composer/installers' => '~1.0',
     ),
+    'minimum-stability' => 'dev',
+    'prefer-stable' => TRUE,
   );
 
   foreach($internal_make_info as $supertype => $packages) {

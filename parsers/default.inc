@@ -6,7 +6,7 @@
  */
 
 // Often we need to fake a version for Composer.
-define("M2C_FAKE_VERSION", "111");
+define("M2C_FAKE_VERSION", "7.x");
 
 /**
  * Parse a makefile into the internal format provided by make.
@@ -74,7 +74,7 @@ function m2c_parsers_default_m2c($internal_make_info) {
             "type" => "drupal-" . $package['type'],
             // Version not always defined in original makefile; we can't use "core",
             // because Composer version numbers cannot end ".x".
-            "version" => $version,
+            "version" => '7.' . $version,
           );
 
           // Get dist/source based on download method.

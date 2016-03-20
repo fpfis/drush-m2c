@@ -47,7 +47,7 @@ function m2c_parsers_default_m2c($internal_make_info) {
       case "core":
         foreach($packages as $name => $package) {
           // Package version can be empty, even after autodiscovery.
-          if ($package["version"] == "") {
+          if ($package["version"] == "" && !empty($package['download']['full_version'])) {
             $package["version"] = str_replace($package["core"] . "-", "", $package['download']['full_version']);
           }
 

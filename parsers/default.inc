@@ -82,11 +82,13 @@ function m2c_parsers_default_m2c($internal_make_info) {
           // Get dist/source based on download method.
           $composer_package += _m2c_map_download_to_composer_dist($package['download'], $package);
 
-          // Put package in as a package repository.
-          $composer['repositories'][$name] = array(
-            "type" => "package",
-            "package" => $composer_package,
-          );
+          if (drush_get_option('add-drupal-repositories') || !_m2c_repository_is_drupal($composer_package)) {
+            // Put package in as a package repository.
+            $composer['repositories'][$name] = array(
+              "type" => "package",
+              "package" => $composer_package,
+            );
+          }
           // Then reference it as a requirement, matching the package version.
           $composer['require'][$composer_package['name']] = $composer_package['version'];
         }
@@ -122,6 +124,12 @@ function m2c_parsers_default_m2c($internal_make_info) {
   }
 
   return $composer;
+}
+
+function _m2c_repository_is_drupal($composer_package) {
+  $url = !empty($composer_package['source']['url']) ? $composer_package['source']['url']
+    :(!empty($composer_package['dist']['url']) ? $composer_package['dist']['url'] : NULL);
+  return $url && preg_match('~^[a-z]*://[a-z]+.drupal.org/~', $url);
 }
 
 /**

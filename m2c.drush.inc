@@ -27,7 +27,7 @@ function m2c_drush_command() {
       'makefile' => 'Makefile location',
     ),
     'options' => array(
-      // 'name' => 'description',
+      'add-drupal-repositories' => 'Add drupal project repositories (defaults to FALSE)',
     ),
     'aliases' => array('make2composer'),
 

@@ -9,6 +9,9 @@
  * Hacked version of make_projects().
  */
 function _make_projects_hacked($recursion, $contrib_destination, $info, $build_path, $make_dir) {
+  /** @var \Drush\UpdateService\ReleaseInfo $release_info */
+  $release_info = drush_include_engine('release_info', 'updatexml');
+
   drush_include_engine('release_info', 'updatexml');
 
   $projects = array();
@@ -48,7 +51,7 @@ function _make_projects_hacked($recursion, $contrib_destination, $info, $build_p
       'build_path'          => $build_path,
       'contrib_destination' => $contrib_destination,
       'version'             => '',
-      'location'            => drush_get_option('make-update-default-url', RELEASE_INFO_DEFAULT_URL),
+      'location'            => drush_get_option('make-update-default-url', $release_info::DEFAULT_URL),
       'subdir'              => '',
       'directory_name'      => '',
       'make_directory'      => $make_dir,
@@ -59,7 +62,7 @@ function _make_projects_hacked($recursion, $contrib_destination, $info, $build_p
     if (isset($project['download']) && !isset($project['download']['type'])) {
       $project['download']['type'] = 'git';
     }
-    if (!isset($project['l10n_url']) && ($project['location'] == RELEASE_INFO_DEFAULT_URL)) {
+    if (!isset($project['l10n_url']) && ($project['location'] == $release_info::DEFAULT_URL)) {
       $project['l10n_url'] = MAKE_DEFAULT_L10N_SERVER;
     }
 
@@ -69,13 +72,13 @@ function _make_projects_hacked($recursion, $contrib_destination, $info, $build_p
     // keys.
     $request = make_prepare_request($project);
 
-    if ($project['location'] != RELEASE_INFO_DEFAULT_URL && !isset($project['type'])) {
+    if ($project['location'] != $release_info::DEFAULT_URL && !isset($project['type'])) {
       // Set the cache option based on our '--no-cache' option.
       $cache_before = drush_get_option('cache');
       if (!drush_get_option('no-cache', FALSE)) {
         drush_set_option('cache', TRUE);
       }
-      $project_type = release_info_check_project($request, 'core');
+      $project_type = $release_info->checkProject($request, 'core');
       // Restore the previous '--cache' option value.
       drush_set_option('cache', $cache_before);
       $project['download_type'] = ($project_type ? 'core' : 'contrib');
@@ -91,6 +94,9 @@ function _make_projects_hacked($recursion, $contrib_destination, $info, $build_p
   }
 
   foreach ($projects as $type => $type_projects) {
+    /** @var \Drush\UpdateService\ReleaseInfo $release_info */
+    $release_info = drush_include_engine('release_info', 'updatexml');
+
     foreach ($type_projects as $project) {
       if (make_project_needs_release_info($project)) {
         // For convenience: define $request to be compatible with release_info
@@ -103,7 +109,7 @@ function _make_projects_hacked($recursion, $contrib_destination, $info, $build_p
         if (!drush_get_option('no-cache', FALSE)) {
           drush_set_option('cache', TRUE);
         }
-        $release = release_info_fetch($request, '');
+        $release = $release_info->selectReleaseBasedOnStrategy($request);
         if ($release === FALSE) {
           return FALSE;
         }

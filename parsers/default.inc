@@ -36,6 +36,7 @@ function m2c_parsers_default_m2c($internal_make_info) {
     ),
     'require' => array(
       'composer/installers' => '~1.0',
+      "cweagans/composer-patches" => "~1.0",
     ),
     'minimum-stability' => 'dev',
     'prefer-stable' => TRUE,
@@ -120,6 +121,14 @@ function m2c_parsers_default_m2c($internal_make_info) {
 
       default:
         drush_log("Didn't deal with make section $supertype", "warning");
+    }
+    // Process patches for all types.
+    foreach ($packages as $name => $package) {
+      if (!empty($package['patch'])) {
+        foreach ($package['patch'] as $patch_name => $patch_url) {
+          $composer['extra']['patches']["drupal/$name"][$patch_name] = $patch_url;
+        }
+      }
     }
   }
 

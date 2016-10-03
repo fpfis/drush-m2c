@@ -126,6 +126,8 @@ function m2c_parsers_default_m2c($internal_make_info) {
     foreach ($packages as $name => $package) {
       if (!empty($package['patch'])) {
         foreach ($package['patch'] as $patch_name => $patch_url) {
+          // Fix old http URLs
+          $patch_url = preg_replace('~^http://www.drupal.org/~', 'https://www.drupal.org/', $patch_url);
           $composer['extra']['patches']["drupal/$name"][$patch_name] = $patch_url;
         }
       }

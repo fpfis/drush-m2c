@@ -63,7 +63,10 @@ function drush_m2c($makefile) {
     m2c_parsers_default_internal($makefile)
   );
 
-  print json_encode($composer, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
+  $json = json_encode($composer, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
+  // Replace tabs with spaces.
+  $json = preg_replace("~\\t~", ' ', $json);
+  print $json;
 }
 
 /**

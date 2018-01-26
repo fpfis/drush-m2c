@@ -1,5 +1,7 @@
 <?php
 
+use Symfony\Component\Finder\Finder;
+
 /**
  * @file
  * Drush make to Composer (m2c)
@@ -29,6 +31,7 @@ function m2c_drush_command() {
     ),
     'options' => array(
       'add-drupal-repositories' => 'Add drupal project repositories (defaults to FALSE)',
+      'custom' => 'Provide a path where custom module, libraries and/or themes can be found.',
       'require-dev' => 'Changes require into require-dev and places provide section (defaults to FALSE)',
     ),
     'aliases' => array('make2composer'),
@@ -69,6 +72,11 @@ function drush_m2c($makefile, $composerfile = NULL) {
   $require_string = "require";
   if (drush_get_option('require-dev')) {
     $require_string = "require-dev";
+  }
+
+  $custom = drush_get_option('custom');
+  if (!empty($custom) && file_exists($custom)) {
+    m2c_drush_create_custom_modules($custom);
   }
 
   if (!isset($composerfile)) {
@@ -178,4 +186,44 @@ function m2c_drush_engine_parsers() {
       'description' => "Parsers",
     ),
   );
+}
+
+/**
+ * Helper function to place composer.json in each folder with .info file.
+ */
+function m2c_drush_create_custom_modules($custom)
+{
+
+  drush_log(dt(
+    "Searching for custom modules in :l.",
+    array(":l" => $custom)
+  ), "ok");
+
+  $finder = new Finder();
+  $finder->files()
+    ->name("*.info")
+    ->in($custom)
+    ->depth('1')
+    ->followLinks();
+
+  foreach ($finder as $file) {
+
+    $composer_json = dirname($file->getRealPath()) . "/composer.json";
+    if (!file_exists($composer_json)) {
+
+      $vendor = basename($custom);
+      $name = basename($file->getRelativePath());
+
+      drush_log(dt("Creating composer.json for !p.", array("!p" => $vendor .  "/" . $name)), "ok");
+ 
+      $composer = array(
+        'name' => $vendor . "/" . $name,
+        'version' => '1.0.0',
+      );
+
+      $composer = json_encode($composer, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
+      $composer = preg_replace("~\\t~", ' ', $composer);
+      file_put_contents($composer_json, $composer);
+    }
+  }
 }

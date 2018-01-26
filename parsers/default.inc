@@ -6,7 +6,7 @@
  */
 
 // Often we need to fake a version for Composer.
-define("M2C_FAKE_VERSION", "7.x");
+define("M2C_FAKE_VERSION", "1.x-dev");
 
 /**
  * Parse a makefile into the internal format provided by make.
@@ -72,12 +72,15 @@ function m2c_parsers_default_m2c($internal_make_info) {
           }
 
           // Assemble a composer package structure.
+          $version = isset($package['download']['branch']) ? str_replace("7.x-", "", $package['download']['branch']) . "-dev" : $version;
+          $version = isset($package['download']['revision']) ? $version . "#" . $package['download']['revision'] : $version;
+          $version = strpos($version, 'dev') !== false ? $version : preg_replace('/([0-9]*\.[0-9]*)(.*)/', '\1.0\2', $version);
           $composer_package = array(
             "name" => "drupal/$name",
             "type" => "drupal-" . $package['type'],
             // Version not always defined in original makefile; we can't use "core",
             // because Composer version numbers cannot end ".x".
-            "version" => '7.' . $version,
+            "version" => $version,
           );
 
           // Get dist/source based on download method.
@@ -85,7 +88,7 @@ function m2c_parsers_default_m2c($internal_make_info) {
 
           if (drush_get_option('add-drupal-repositories') || !_m2c_repository_is_drupal($composer_package)) {
             // Put package in as a package repository.
-            $composer['repositories'][$name] = array(
+            $composer['repositories'][] = array(
               "type" => "package",
               "package" => $composer_package,
             );
@@ -93,6 +96,10 @@ function m2c_parsers_default_m2c($internal_make_info) {
           // Then reference it as a requirement, matching the package version.
           $composer['require'][$composer_package['name']] = $composer_package['version'];
         }
+        $composer['repositories'][] = array(
+          "type" => "composer",
+          "url" => "https://packages.drupal.org/7",
+        );
         break;
 
       case "libraries":

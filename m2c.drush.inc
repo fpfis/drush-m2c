@@ -241,8 +241,8 @@ function m2c_drush_create_custom_modules($custom)
     else {
       $composer_current = file_get_contents($composer_json);
       $composer_current = json_decode($composer_current, true);
-      $version = $composer_current['version'];
       $composer = array_merge($composer, $composer_current);
+      $version = $composer['version'];
       $composer = json_encode($composer, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
       $composer = preg_replace("~\\t~", ' ', $composer);
 

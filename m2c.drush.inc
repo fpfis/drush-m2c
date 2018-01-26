@@ -29,6 +29,7 @@ function m2c_drush_command() {
     ),
     'options' => array(
       'add-drupal-repositories' => 'Add drupal project repositories (defaults to FALSE)',
+      'require-dev' => 'Changes require into require-dev and places provide section (defaults to FALSE)',
     ),
     'aliases' => array('make2composer'),
 
@@ -64,6 +65,12 @@ function drush_m2c($makefile, $composerfile = NULL) {
     m2c_parsers_default_internal($makefile)
   );
 
+  // Allow for development json file.
+  $require_string = "require";
+  if (drush_get_option('require-dev')) {
+    $require_string = "require-dev";
+  }
+
   if (!isset($composerfile)) {
     $json = json_encode($composer, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
     // Replace tabs with spaces.
@@ -95,15 +102,22 @@ function drush_m2c($makefile, $composerfile = NULL) {
       if (count($composer['require']) > 3) {
 
         $require = array(
-          'require' => array_slice($composer['require'], 3, NULL, true),
+          $require_string => array_slice($composer['require'], 3, NULL, true),
         );
+
+        // Copy all except core to provide section right after require section.
+        if ($require_string == "require-dev") {
+          unset($require['require-dev']['drupal/drupal']);
+          $position = array_search('require', array_keys($composer)) + 1;
+          $composer = array_slice($composer, 0, $position, true) + array("provide" => $require['require-dev']) + array_slice($composer, $position, count($composer) - $position, true);
+        }
 
         $composer['require'] = array_slice($composer['require'], 0, 3, true);
 
         $require = json_encode($require, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
         // Replace tabs with spaces.
         $require = preg_replace("~\\t~", ' ', $require);
-        file_put_contents("require-require.json", $require);
+        file_put_contents("require-" . $require_string . ".json", $require);
       }
 
       // Split off repositories and add to merge array.

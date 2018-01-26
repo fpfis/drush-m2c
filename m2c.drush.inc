@@ -31,7 +31,7 @@ function m2c_drush_command() {
     ),
     'options' => array(
       'add-drupal-repositories' => 'Add drupal project repositories (defaults to FALSE)',
-      'custom' => 'Provide a path where custom module, libraries and/or themes can be found.',
+      'custom' => 'Provide path(s) where custom module, libraries and/or themes can be found. Multiple paths should be comma separated.',
       'require-dev' => 'Changes require into require-dev and places provide section (defaults to FALSE)',
     ),
     'aliases' => array('make2composer'),
@@ -74,9 +74,14 @@ function drush_m2c($makefile, $composerfile = NULL) {
     $require_string = "require-dev";
   }
 
+  // Create, update and add custom modules, themes and/or libraries.
   $custom = drush_get_option('custom');
-  if (!empty($custom) && file_exists($custom)) {
-    m2c_drush_create_custom_modules($custom);
+  $custom = explode(",", $custom);
+  foreach ($custom as $path) {
+    if (!empty($path) && file_exists($path)) {
+      $custom_composer = m2c_drush_create_custom_modules($path);
+      $composer = array_merge_recursive($composer, $custom_composer);
+    }
   }
 
   if (!isset($composerfile)) {
@@ -193,6 +198,10 @@ function m2c_drush_engine_parsers() {
  */
 function m2c_drush_create_custom_modules($custom)
 {
+  $custom_composer = array(
+    'repositories' => array(),
+    'require' => array(),
+  );
 
   drush_log(dt(
     "Searching for custom modules in :l.",
@@ -207,23 +216,45 @@ function m2c_drush_create_custom_modules($custom)
     ->followLinks();
 
   foreach ($finder as $file) {
-
+    $vendor = basename($custom);
+    $version = "1.0.0";
+    $name = basename($file->getRelativePath());
     $composer_json = dirname($file->getRealPath()) . "/composer.json";
+    $composer = array(
+      'name' => $vendor . "/" . $name,
+      'version' => '1.0.0',
+    );
+
     if (!file_exists($composer_json)) {
-
-      $vendor = basename($custom);
-      $name = basename($file->getRelativePath());
-
-      drush_log(dt("Creating composer.json for !p.", array("!p" => $vendor .  "/" . $name)), "ok");
- 
       $composer = array(
         'name' => $vendor . "/" . $name,
-        'version' => '1.0.0',
+        'version' => $version,
       );
 
       $composer = json_encode($composer, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
       $composer = preg_replace("~\\t~", ' ', $composer);
-      file_put_contents($composer_json, $composer);
+      
+      if (file_put_contents($composer_json, $composer)) {
+        drush_log(dt("Created composer.json for !p.", array("!p" => $vendor .  "/" . $name)), "warning");
+      }
     }
+    else {
+      $composer_current = file_get_contents($composer_json);
+      $composer_current = json_decode($composer_current, true);
+      $version = $composer_current['version'];
+      $composer = array_merge($composer, $composer_current);
+      $composer = json_encode($composer, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
+      $composer = preg_replace("~\\t~", ' ', $composer);
+
+      if (file_put_contents($composer_json, $composer)) {
+        drush_log(dt("Updated composer.json for !p.", array("!p" => $vendor .  "/" . $name)), "warning");
+      }
+    }
+    $custom_composer['require'][$vendor . "/" . $name] = $version;
+    $custom_composer['repositories'][] = array(
+      'type' => 'path',
+      'url' => $custom . "/" . $name,
+    );
   }
+  return $custom_composer;
 }

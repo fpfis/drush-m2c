@@ -32,14 +32,43 @@ function m2c_parsers_default_internal($makefile) {
 function m2c_parsers_default_m2c($internal_make_info) {
   // Start composer file.
   $composer = array(
-    'repositories' => array(
-    ),
     'require' => array(
       'composer/installers' => '~1.0',
       "cweagans/composer-patches" => "~1.0",
     ),
     'minimum-stability' => 'dev',
     'prefer-stable' => TRUE,
+    'extra' => array(
+      'installer-paths' => array(
+        'vendor/drupal/core' => array(
+          'type:drupal-core',
+        ),
+        'vendor/drupal/profiles/{$name}' => array(
+          'type:drupal-profile',
+        ),
+        'vendor/drupal/modules/{$name}' => array(
+          'type:drupal-module',
+        ),
+        'vendor/drupal/themes/{$name}' => array(
+          'type:drupal-theme',
+        ),
+        'vendor/drupal/libraries/{$name}' => array(
+          'type:drupal-library',
+        ),
+        'vendor/drupal/drush/{$name}' => array(
+          'type:drupal-drush',
+        ),
+      ),
+    ),
+    'repositories' => array(
+      array(
+        "type" => "composer",
+        "url" => "https://packages.drupal.org/7",
+      ),
+    ),
+    'config' => array(
+      'secure-http' => true,
+    ),
   );
 
   foreach($internal_make_info as $supertype => $packages) {
@@ -86,6 +115,11 @@ function m2c_parsers_default_m2c($internal_make_info) {
           // Get dist/source based on download method.
           $composer_package += _m2c_map_download_to_composer_dist($package['download'], $package);
 
+          // Allow http if needed.
+          if (isset($composer_package['download']['url']) && strpos($composer_package['download']['url'], 'http://') !== false) {
+            $composer['config']['secure-http'] = false;
+          }
+
           if (drush_get_option('add-drupal-repositories') || !_m2c_repository_is_drupal($composer_package)) {
             // Put package in as a package repository.
             $composer['repositories'][] = array(
@@ -96,10 +130,6 @@ function m2c_parsers_default_m2c($internal_make_info) {
           // Then reference it as a requirement, matching the package version.
           $composer['require'][$composer_package['name']] = $composer_package['version'];
         }
-        $composer['repositories'][] = array(
-          "type" => "composer",
-          "url" => "https://packages.drupal.org/7",
-        );
         break;
 
       case "libraries":
@@ -136,6 +166,10 @@ function m2c_parsers_default_m2c($internal_make_info) {
           // Fix old http URLs
           $patch_url = preg_replace('~^http://www.drupal.org/~', 'https://www.drupal.org/', $patch_url);
           $composer['extra']['patches']["drupal/$name"][$patch_name] = $patch_url;
+          // Allow http if needed.
+          if (strpos($patch_url, 'http://') !== false) {
+            $composer['config']['secure-http'] = false;
+          }
         }
       }
     }
@@ -194,6 +228,9 @@ function _m2c_map_download_to_composer_dist($download, $package = NULL) {
         if (strpos(strrev($url), strrev($zip_suffix)) === 0) {
           $type = $zip_type;
           break;
+        }
+        else {
+          $type = "file";
         }
       }
 

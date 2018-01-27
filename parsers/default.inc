@@ -38,28 +38,6 @@ function m2c_parsers_default_m2c($internal_make_info) {
     ),
     'minimum-stability' => 'dev',
     'prefer-stable' => TRUE,
-    'extra' => array(
-      'installer-paths' => array(
-        'vendor/drupal/core' => array(
-          'type:drupal-core',
-        ),
-        'vendor/drupal/profiles/{$name}' => array(
-          'type:drupal-profile',
-        ),
-        'vendor/drupal/modules/{$name}' => array(
-          'type:drupal-module',
-        ),
-        'vendor/drupal/themes/{$name}' => array(
-          'type:drupal-theme',
-        ),
-        'vendor/drupal/libraries/{$name}' => array(
-          'type:drupal-library',
-        ),
-        'vendor/drupal/drush/{$name}' => array(
-          'type:drupal-drush',
-        ),
-      ),
-    ),
     'repositories' => array(
       array(
         "type" => "composer",

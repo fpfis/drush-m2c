@@ -30,8 +30,19 @@ function m2c_parsers_default_internal($makefile) {
  * Parse internal make format into composer
  */
 function m2c_parsers_default_m2c($internal_make_info) {
+
   // Start composer file.
-  $composer = array(
+  $composer = array();
+
+  if (!empty(drush_get_option('name'))) {
+    $composer['name'] = drush_get_option('name');
+  }
+
+  if (!empty(drush_get_option('type'))) {
+    $composer['type'] = drush_get_option('type');
+  }
+
+  $composer += array(
     'require' => array(
       'composer/installers' => '~1.0',
       "cweagans/composer-patches" => "~1.0",

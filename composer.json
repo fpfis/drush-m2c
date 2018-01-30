@@ -1,5 +1,5 @@
 {
-  "name": "ec-europa/drush-m2c",
+  "name": "fpfis/drush-m2c",
   "description": "Helps convert drush make files to composer.",
   "type": "drupal-drush",
   "keywords": ["drush","converter"],

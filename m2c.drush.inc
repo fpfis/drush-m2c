@@ -172,6 +172,12 @@ function drush_m2c($makefile, $composerfile = NULL) {
         unset($composer['extra']['patches']);
       }
 
+      if(drush_get_option('name', false)) {
+          $composer['name'] = drush_get_option('name');
+      }
+
+      $composer['type'] = 'drupal-profile';
+
       // Print remaining to main composer.json.
       $json = json_encode($composer, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
       // Replace tabs with spaces.
